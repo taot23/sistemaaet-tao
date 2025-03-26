@@ -12,6 +12,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllAdminUsers(): Promise<User[]>;
   
   // Vehicle operations
   getVehicle(id: number): Promise<Vehicle | undefined>;
@@ -28,6 +29,7 @@ export interface IStorage {
   getDraftLicensesByUserId(userId: number): Promise<License[]>;
   getInProgressLicensesByUserId(userId: number): Promise<License[]>;
   getCompletedLicensesByUserId(userId: number): Promise<License[]>;
+  getAllLicenses(status?: string): Promise<License[]>;
   createLicense(license: InsertLicense): Promise<License>;
   updateLicense(id: number, license: Partial<InsertLicense>): Promise<License | undefined>;
   deleteLicense(id: number): Promise<boolean>;
@@ -44,7 +46,7 @@ export interface IStorage {
   }>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class MemStorage implements IStorage {
@@ -56,7 +58,7 @@ export class MemStorage implements IStorage {
   private vehicleIdCounter: number;
   private licenseIdCounter: number;
   private activityIdCounter: number;
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 
   constructor() {
     this.users = new Map();
@@ -81,10 +83,16 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(user => user.email === email);
   }
 
+  async getAllAdminUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => user.isAdmin === true);
+  }
+
   async createUser(userData: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const createdAt = new Date();
-    const user: User = { ...userData, id, createdAt };
+    // Garantir que isAdmin é um booleano
+    const isAdmin = userData.isAdmin === true;
+    const user: User = { ...userData, id, createdAt, isAdmin };
     this.users.set(id, user);
     return user;
   }
@@ -113,7 +121,9 @@ export class MemStorage implements IStorage {
   async createVehicle(vehicleData: InsertVehicle): Promise<Vehicle> {
     const id = this.vehicleIdCounter++;
     const createdAt = new Date();
-    const vehicle: Vehicle = { ...vehicleData, id, createdAt };
+    // Garantir que documentUrl seja sempre string ou null, nunca undefined
+    const documentUrl = vehicleData.documentUrl === undefined ? null : vehicleData.documentUrl;
+    const vehicle: Vehicle = { ...vehicleData, id, createdAt, documentUrl };
     this.vehicles.set(id, vehicle);
     return vehicle;
   }
@@ -161,6 +171,18 @@ export class MemStorage implements IStorage {
       license.status === "Liberada"
     );
   }
+  
+  async getAllLicenses(status?: string): Promise<License[]> {
+    let licenses = Array.from(this.licenses.values()).filter(license => 
+      license.isDraft === false
+    );
+    
+    if (status) {
+      licenses = licenses.filter(license => license.status === status);
+    }
+    
+    return licenses;
+  }
 
   async createLicense(licenseData: InsertLicense): Promise<License> {
     const id = this.licenseIdCounter++;
@@ -172,12 +194,18 @@ export class MemStorage implements IStorage {
       licenseNumber = `AET-${new Date().getFullYear()}-${id.toString().padStart(4, '0')}`;
     }
     
+    // Garantir valores padrão e tipos corretos
+    const status = licenseData.status || "Pendente Cadastro";
+    const isDraft = licenseData.isDraft === undefined ? true : licenseData.isDraft;
+    
     const license: License = { 
       ...licenseData, 
       id, 
       licenseNumber, 
       createdAt, 
       updatedAt,
+      status,
+      isDraft,
       licenseFileUrl: null,
       issueDate: null,
       expirationDate: null
@@ -224,7 +252,19 @@ export class MemStorage implements IStorage {
   async createActivity(activityData: InsertActivity): Promise<Activity> {
     const id = this.activityIdCounter++;
     const createdAt = new Date();
-    const activity: Activity = { ...activityData, id, createdAt };
+    
+    // Garantir que licenseId e vehicleId sejam null se não fornecidos
+    const licenseId = activityData.licenseId === undefined ? null : activityData.licenseId;
+    const vehicleId = activityData.vehicleId === undefined ? null : activityData.vehicleId;
+    
+    const activity: Activity = { 
+      ...activityData, 
+      id, 
+      createdAt,
+      licenseId,
+      vehicleId
+    };
+    
     this.activities.set(id, activity);
     return activity;
   }
