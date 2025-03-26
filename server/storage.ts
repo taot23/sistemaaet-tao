@@ -72,6 +72,19 @@ export class MemStorage implements IStorage {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000
     });
+    
+    // Criar usuário administrador padrão
+    const adminId = this.userIdCounter++;
+    const admin = {
+      id: adminId,
+      email: "admin@sistema.com",
+      password: "c0b445e81d9946c0287f2c6c5c924c91be62d96b93c6a5561afa37d0919a10de6d1d5bf303df95e2cf8ceefca87e66713d51413b979228cb5ecdf9c96e3efcea.dc9be13c74fe49e0", // hash de "142536!@NVS"
+      fullName: "Administrador",
+      phone: "0000000000",
+      isAdmin: true,
+      createdAt: new Date()
+    };
+    this.users.set(adminId, admin);
   }
 
   // User operations
