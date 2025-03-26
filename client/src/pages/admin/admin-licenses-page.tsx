@@ -54,17 +54,14 @@ import { Badge } from "@/components/ui/badge";
 const statusMap: Record<string, { label: string; variant: "default" | "outline" | "secondary" | "destructive" | "success" }> = {
   "Pendente Cadastro": { label: "Pendente Cadastro", variant: "outline" },
   "Cadastro em Andamento": { label: "Cadastro em Andamento", variant: "secondary" },
-  "Reprovado": { label: "Reprovado", variant: "destructive" },
+  "Reprovado – Pendência de Documentação": { label: "Reprovado", variant: "destructive" },
   "Análise do Órgão": { label: "Análise do Órgão", variant: "default" },
   "Pendente Liberação": { label: "Pendente Liberação", variant: "secondary" },
   "Liberada": { label: "Liberada", variant: "success" },
 };
 
 const updateStatusSchema = z.object({
-  status: z.string().refine(
-    (value) => licenseStatuses.includes(value),
-    { message: "Status inválido" }
-  ),
+  status: z.enum(licenseStatuses),
 });
 
 const uploadFileSchema = z.object({
@@ -85,11 +82,12 @@ export default function AdminLicensesPage() {
 
   const { data: licenses, isLoading, refetch } = useQuery<License[]>({
     queryKey: ["/api/admin/licenses", selectedStatus],
-    queryFn: () => {
-      const url = selectedStatus
-        ? `/api/admin/licenses?status=${encodeURIComponent(selectedStatus)}`
+    queryFn: async ({ queryKey }) => {
+      const status = queryKey[1] as string | undefined;
+      const url = status
+        ? `/api/admin/licenses?status=${encodeURIComponent(status)}`
         : "/api/admin/licenses";
-      return getQueryFn({ on401: "throw" })(url);
+      return getQueryFn({ on401: "throw" })({ queryKey: [url] });
     },
   });
 
@@ -261,68 +259,69 @@ export default function AdminLicensesPage() {
             </div>
           ) : (
             <Table>
-            <TableCaption>Lista de licenças no sistema</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Número</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Solicitante</TableHead>
-                <TableHead>Data de Solicitação</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {licenses && licenses.length > 0 ? (
-                licenses.map((license) => (
-                  <TableRow key={license.id}>
-                    <TableCell className="font-medium">
-                      {license.licenseNumber || `AET-${license.id}`}
-                    </TableCell>
-                    <TableCell>{license.setType}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={statusMap[license.status]?.variant || "default"}
-                      >
-                        {license.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{`Usuário ID: ${license.userId}`}</TableCell>
-                    <TableCell>
-                      {format(new Date(license.createdAt), "dd/MM/yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => openStatusDialog(license)}
-                        >
-                          Alterar Status
-                        </Button>
-                        <Button 
-                          size="sm" 
+              <TableCaption>Lista de licenças no sistema</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Número</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Solicitante</TableHead>
+                  <TableHead>Data de Solicitação</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {licenses && licenses.length > 0 ? (
+                  licenses.map((license) => (
+                    <TableRow key={license.id}>
+                      <TableCell className="font-medium">
+                        {license.licenseNumber || `AET-${license.id}`}
+                      </TableCell>
+                      <TableCell>{license.setType}</TableCell>
+                      <TableCell>
+                        <Badge 
                           variant="default"
-                          onClick={() => openUploadDialog(license)}
                         >
-                          <FileUp className="h-4 w-4 mr-1" /> 
-                          Upload
-                        </Button>
-                      </div>
+                          {license.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{`Usuário ID: ${license.userId}`}</TableCell>
+                      <TableCell>
+                        {format(new Date(license.createdAt), "dd/MM/yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => openStatusDialog(license)}
+                          >
+                            Alterar Status
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="default"
+                            onClick={() => openUploadDialog(license)}
+                          >
+                            <FileUp className="h-4 w-4 mr-1" /> 
+                            Upload
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-4">
+                      Nenhuma licença encontrada
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
-                    Nenhuma licença encontrada
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </main>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </main>
+      </div>
       
       {/* Status Update Dialog */}
       <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
