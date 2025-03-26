@@ -124,7 +124,7 @@ export function LicensesCompleted() {
               <SelectValue placeholder="Todos os estados" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os estados</SelectItem>
+              <SelectItem value="all">Todos os estados</SelectItem>
               {states.map((state) => (
                 <SelectItem key={state} value={state}>
                   {state}

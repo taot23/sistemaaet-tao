@@ -186,7 +186,7 @@ export function LicensesInProgress() {
               <SelectValue placeholder="Todos os status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os status</SelectItem>
+              <SelectItem value="all">Todos os status</SelectItem>
               {licenseStatuses.map((status) => (
                 <SelectItem key={status} value={status}>
                   {status}

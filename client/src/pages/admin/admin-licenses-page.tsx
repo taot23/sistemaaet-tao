@@ -82,12 +82,22 @@ export default function AdminLicensesPage() {
 
   const { data: licenses, isLoading, refetch } = useQuery<License[]>({
     queryKey: ["/api/admin/licenses", selectedStatus],
-    queryFn: async ({ queryKey }) => {
+    queryFn: async ({ queryKey, signal }) => {
       const status = queryKey[1] as string | undefined;
-      const url = status
+      const url = status && status !== "all"
         ? `/api/admin/licenses?status=${encodeURIComponent(status)}`
         : "/api/admin/licenses";
-      return getQueryFn({ on401: "throw" })({ queryKey: [url] });
+      const response = await fetch(url, {
+        credentials: "include",
+        signal
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Não autorizado");
+        }
+        throw new Error("Erro ao buscar licenças");
+      }
+      return await response.json();
     },
   });
 
@@ -233,7 +243,7 @@ export default function AdminLicensesPage() {
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   {licenseStatuses.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}

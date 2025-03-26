@@ -123,7 +123,7 @@ export function VehicleList() {
               <SelectValue placeholder="Todos os tipos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os tipos</SelectItem>
+              <SelectItem value="all">Todos os tipos</SelectItem>
               {vehicleTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
