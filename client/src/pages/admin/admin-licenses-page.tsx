@@ -4,6 +4,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { License, licenseStatuses } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import {
   Select,
   SelectContent,
@@ -211,49 +213,54 @@ export default function AdminLicensesPage() {
     });
   };
 
+  const isMobile = useIsMobile();
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Header title="Administração de Licenças" />
       
-      <main className="flex-1 container py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Gerenciamento de Licenças</h1>
-          
-          <div className="flex items-center gap-4">
-            <Select
-              value={selectedStatus}
-              onValueChange={setSelectedStatus}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filtrar por status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
-                {licenseStatuses.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => refetch()}
-              title="Atualizar"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="flex flex-1">
+        {!isMobile && <AdminSidebar />}
         
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <main className="flex-1 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Gerenciamento de Licenças</h1>
+          
+            <div className="flex items-center gap-4">
+              <Select
+                value={selectedStatus}
+                onValueChange={setSelectedStatus}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os status</SelectItem>
+                  {licenseStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => refetch()}
+                title="Atualizar"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        ) : (
-          <Table>
+
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table>
             <TableCaption>Lista de licenças no sistema</TableCaption>
             <TableHeader>
               <TableRow>
