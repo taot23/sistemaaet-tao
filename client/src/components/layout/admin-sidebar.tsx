@@ -21,17 +21,16 @@ interface SidebarItemProps {
 
 function SidebarItem({ icon: Icon, label, active, href }: SidebarItemProps) {
   return (
-    <Link href={href}>
-      <a
-        className={cn(
-          "flex items-center gap-2 rounded-lg px-3 py-2 text-base transition-all hover:text-primary",
-          active ? "bg-muted font-semibold text-primary" : "text-muted-foreground"
-        )}
-      >
-        <Icon className="h-5 w-5" />
-        <span>{label}</span>
-        {active && <ChevronRight className="ml-auto h-4 w-4 text-primary" />}
-      </a>
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-2 rounded-lg px-3 py-2 text-base transition-all hover:text-primary",
+        active ? "bg-muted font-semibold text-primary" : "text-muted-foreground"
+      )}
+    >
+      <Icon className="h-5 w-5" />
+      <span>{label}</span>
+      {active && <ChevronRight className="ml-auto h-4 w-4 text-primary" />}
     </Link>
   );
 }

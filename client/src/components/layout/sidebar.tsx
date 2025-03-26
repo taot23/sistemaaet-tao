@@ -58,74 +58,69 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">
-        <Link href="/">
-          <a
-            className={cn(
-              "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
-              location === "/"
-                ? "bg-primary bg-opacity-10 border-l-4 border-primary"
-                : "border-l-4 border-transparent"
-            )}
-          >
-            <LayoutDashboard className="h-5 w-5 mr-3" />
-            Dashboard
-          </a>
+        <Link 
+          href="/"
+          className={cn(
+            "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
+            location === "/"
+              ? "bg-primary bg-opacity-10 border-l-4 border-primary"
+              : "border-l-4 border-transparent"
+          )}
+        >
+          <LayoutDashboard className="h-5 w-5 mr-3" />
+          Dashboard
         </Link>
 
-        <Link href="/vehicles">
-          <a
-            className={cn(
-              "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
-              location === "/vehicles"
-                ? "bg-primary bg-opacity-10 border-l-4 border-primary"
-                : "border-l-4 border-transparent"
-            )}
-          >
-            <Truck className="h-5 w-5 mr-3" />
-            Veículos Cadastrados
-          </a>
+        <Link 
+          href="/vehicles"
+          className={cn(
+            "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
+            location === "/vehicles"
+              ? "bg-primary bg-opacity-10 border-l-4 border-primary"
+              : "border-l-4 border-transparent"
+          )}
+        >
+          <Truck className="h-5 w-5 mr-3" />
+          Veículos Cadastrados
         </Link>
 
-        <Link href="/request-license">
-          <a
-            className={cn(
-              "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
-              location === "/request-license"
-                ? "bg-primary bg-opacity-10 border-l-4 border-primary"
-                : "border-l-4 border-transparent"
-            )}
-          >
-            <FileText className="h-5 w-5 mr-3" />
-            Solicitar Licença
-          </a>
+        <Link 
+          href="/request-license"
+          className={cn(
+            "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
+            location === "/request-license"
+              ? "bg-primary bg-opacity-10 border-l-4 border-primary"
+              : "border-l-4 border-transparent"
+          )}
+        >
+          <FileText className="h-5 w-5 mr-3" />
+          Solicitar Licença
         </Link>
 
-        <Link href="/track-license">
-          <a
-            className={cn(
-              "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
-              location === "/track-license"
-                ? "bg-primary bg-opacity-10 border-l-4 border-primary"
-                : "border-l-4 border-transparent"
-            )}
-          >
-            <ClipboardList className="h-5 w-5 mr-3" />
-            Acompanhar Licença
-          </a>
+        <Link 
+          href="/track-license"
+          className={cn(
+            "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
+            location === "/track-license"
+              ? "bg-primary bg-opacity-10 border-l-4 border-primary"
+              : "border-l-4 border-transparent"
+          )}
+        >
+          <ClipboardList className="h-5 w-5 mr-3" />
+          Acompanhar Licença
         </Link>
 
-        <Link href="/completed-licenses">
-          <a
-            className={cn(
-              "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
-              location === "/completed-licenses"
-                ? "bg-primary bg-opacity-10 border-l-4 border-primary"
-                : "border-l-4 border-transparent"
-            )}
-          >
-            <FileCheck className="h-5 w-5 mr-3" />
-            Licenças Emitidas
-          </a>
+        <Link 
+          href="/completed-licenses"
+          className={cn(
+            "flex items-center px-4 py-3 text-neutral-600 hover:text-primary",
+            location === "/completed-licenses"
+              ? "bg-primary bg-opacity-10 border-l-4 border-primary"
+              : "border-l-4 border-transparent"
+          )}
+        >
+          <FileCheck className="h-5 w-5 mr-3" />
+          Licenças Emitidas
         </Link>
       </nav>
 
