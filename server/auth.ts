@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -16,6 +16,22 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
+
+// Middleware to check if user is authenticated
+export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Não autenticado" });
+}
+
+// Middleware to check if user is admin
+export function isAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated() && req.user.isAdmin) {
+    return next();
+  }
+  res.status(403).json({ message: "Acesso negado. Apenas administradores têm permissão." });
+}
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");

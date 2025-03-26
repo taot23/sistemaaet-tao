@@ -1,8 +1,8 @@
-import express, { type Express, type Request, type Response } from "express";
+import express, { type Express, type Request, type Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, isAuthenticated, isAdmin } from "./auth";
 import { storage } from "./storage";
-import { insertVehicleSchema, insertLicenseSchema, insertActivitySchema } from "@shared/schema";
+import { insertVehicleSchema, insertLicenseSchema, insertActivitySchema, licenseStatuses } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import multer from "multer";
@@ -39,17 +39,153 @@ const upload = multer({
   }
 });
 
-// Helper function to check if user is authenticated
-function isAuthenticated(req: Request, res: Response, next: Function) {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: "Não autenticado" });
-}
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+
+  // ===== Setup initial admin account =====
+  app.post("/api/setup-admin", async (req, res) => {
+    try {
+      // Verificar se a senha de instalação está correta
+      if (req.body.setupPassword !== "142536!@NVS") {
+        return res.status(401).json({ message: "Senha de instalação inválida" });
+      }
+
+      // Verificar se já existe um admin
+      const adminUsers = await storage.getAllAdminUsers();
+      if (adminUsers.length > 0) {
+        return res.status(400).json({ message: "Conta de administrador já configurada" });
+      }
+
+      // Criar o usuário admin
+      const adminUser = await storage.createUser({
+        email: req.body.email,
+        password: req.body.password,
+        fullName: "Administrador",
+        phone: req.body.phone || "0000000000",
+        isAdmin: true
+      });
+
+      // Retorna o administrador criado (sem a senha)
+      const { password, ...adminWithoutPassword } = adminUser;
+      res.status(201).json(adminWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao configurar administrador" });
+    }
+  });
+
+  // ===== Admin Routes =====
+  
+  // Get all licenses for admin panel
+  app.get("/api/admin/licenses", isAdmin, async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const licenses = await storage.getAllLicenses(status);
+      res.json(licenses);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao obter licenças" });
+    }
+  });
+  
+  // Get available status options
+  app.get("/api/admin/status-options", isAdmin, (req, res) => {
+    res.json(licenseStatuses);
+  });
+  
+  // Update license status (admin)
+  app.put("/api/admin/licenses/:id/status", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID de licença inválido" });
+      }
+      
+      const { status } = req.body;
+      if (!status || !licenseStatuses.includes(status)) {
+        return res.status(400).json({ message: "Status inválido" });
+      }
+      
+      const license = await storage.getLicense(id);
+      if (!license) {
+        return res.status(404).json({ message: "Licença não encontrada" });
+      }
+      
+      const updatedLicense = await storage.updateLicense(id, { status });
+      
+      // Registrar a atividade
+      await storage.createActivity({
+        description: `Status da licença ${license.licenseNumber || id} alterado para: ${status}`,
+        licenseId: id,
+        userId: req.user.id
+      });
+      
+      res.json(updatedLicense);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao atualizar status da licença" });
+    }
+  });
+  
+  // Upload license file (admin)
+  app.put("/api/admin/licenses/:id/file", isAdmin, upload.single('licenseFile'), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID de licença inválido" });
+      }
+      
+      // Verificar se licença existe
+      const license = await storage.getLicense(id);
+      if (!license) {
+        return res.status(404).json({ message: "Licença não encontrada" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "Nenhum arquivo enviado" });
+      }
+      
+      const licenseFileUrl = `/uploads/${req.file.filename}`;
+      const now = new Date();
+      // Se estiver marcando como liberada, definir datas de emissão e expiração
+      let updateData: any = { 
+        licenseFileUrl,
+        status: "Liberada" 
+      };
+      
+      // Se estiver configurando o número da licença
+      if (req.body.licenseNumber) {
+        updateData.licenseNumber = req.body.licenseNumber;
+      }
+      
+      // Configurar datas
+      if (req.body.issueDate) {
+        updateData.issueDate = new Date(req.body.issueDate);
+      } else {
+        updateData.issueDate = now;
+      }
+      
+      if (req.body.expirationDate) {
+        updateData.expirationDate = new Date(req.body.expirationDate);
+      } else {
+        // Expiração padrão de 1 ano
+        const expirationDate = new Date(now);
+        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+        updateData.expirationDate = expirationDate;
+      }
+      
+      const updatedLicense = await storage.updateLicense(id, updateData);
+      
+      // Registrar a atividade
+      await storage.createActivity({
+        description: `Licença ${license.licenseNumber || updatedLicense.licenseNumber || id} emitida e disponibilizada`,
+        licenseId: id,
+        userId: req.user.id
+      });
+      
+      res.json(updatedLicense);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao fazer upload do arquivo da licença" });
+    }
+  });
 
   // ===== Dashboard Routes =====
   
